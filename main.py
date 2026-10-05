@@ -5,7 +5,7 @@ import os
 from flask import Flask
 from threading import Thread
 
-# 1. Create a fake web server to satisfy Render's Free Web Service requirements
+# 1. Create a web server for Render's Free Tier
 app = Flask('')
 
 @app.route('/')
@@ -13,7 +13,6 @@ def home():
     return "Bot is alive and running!"
 
 def run_web_server():
-    # Render automatically passes a port number via environment variables
     port = int(os.getenv("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
@@ -38,14 +37,12 @@ async def on_ready():
         print(f"❌ Setup error: {e}")
 
 async def main():
-    # Start the web server thread before running the bot
     keep_alive()
-    
     token = os.getenv('DISCORD_TOKEN')
     if token:
         await bot.start(token)
     else:
-        print("❌ Error: No DISCORD_TOKEN found in Environment Variables!")
+        print("❌ Error: No DISCORD_TOKEN found!")
 
 if __name__ == "__main__":
     asyncio.run(main())
