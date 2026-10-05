@@ -1,7 +1,6 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-import os
 import asyncio
 
 class AccountChecker(commands.Cog):
@@ -15,23 +14,27 @@ class AccountChecker(commands.Cog):
         donut_status = "🟢 Unbanned"
         return hypixel_status, donut_status
 
-    @app_commands.command(name="check", description="Check MC accounts from a file and send them in a single bulk summary.")
+    @app_commands.command(name="check", description="Upload a .txt combo file to check Minecraft account ban status.")
     @app_commands.describe(
-        file_path="The exact local path or filename of the email:pass file",
-        channel="The channel where you want the single embed to be sent"
+        file="Upload your account .txt file formatted as email:password",
+        channel="The target channel where you want the summary embed sent"
     )
-    async def check_accounts(self, interaction: discord.Interaction, file_path: str, channel: discord.TextChannel):
-        await interaction.response.send_message(f"🔄 Processing combo file: `{file_path}`...", ephemeral=True)
-
-        if not os.path.exists(file_path):
-            await interaction.followup.send(f"❌ Error: File `{file_path}` not found.", ephemeral=True)
+    async def check_accounts(self, interaction: discord.Interaction, file: discord.Attachment, channel: discord.TextChannel):
+        # Validate that the user actually uploaded a text file
+        if not file.filename.endswith('.txt'):
+            await interaction.response.send_message("❌ Error: Please upload a valid text file ending in `.txt`.", ephemeral=True)
             return
 
+        # Acknowledge interaction right away to prevent application timeout
+        await interaction.response.send_message(f"📥 Downloading and processing `{file.filename}`...", ephemeral=True)
+
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                lines = f.read().splitlines()
+            # Read the attachment bytes directly from Discord's CDN into memory
+            file_bytes = await file.read()
+            content = file_bytes.decode('utf-8')
+            lines = content.splitlines()
         except Exception as e:
-            await interaction.followup.send(f"❌ Error reading file: {str(e)}", ephemeral=True)
+            await interaction.followup.send(f"❌ Failed to parse uploaded file: {str(e)}", ephemeral=True)
             return
 
         valid_combos = []
@@ -41,31 +44,30 @@ class AccountChecker(commands.Cog):
                 valid_combos.append((parts[0].strip(), parts[1].strip()))
 
         if not valid_combos:
-            await interaction.followup.send("❌ No valid `email:password` lines found.", ephemeral=True)
+            await interaction.followup.send("❌ No valid accounts found. Ensure formatting is `email:password` on each line.", ephemeral=True)
             return
 
-        await interaction.followup.send(f"🔎 Found {len(valid_combos)} accounts. Running check...", ephemeral=True)
+        await interaction.followup.send(f"🔎 Found {len(valid_combos)} accounts. Executing status checks...", ephemeral=True)
 
-        # Create one overarching master embed
+        # Build a single master delivery summary card
         bulk_embed = discord.Embed(
             title="📊 Minecraft Account Status Batch Report",
-            description=f"Total accounts checked: **{len(valid_combos)}**",
+            description=f"Total accounts processed: **{len(valid_combos)}**",
             color=discord.Color.green()
         )
 
         for email, password in valid_combos:
             hypixel, donut = await self.verify_minecraft_account(email, password)
             
-            # Format each account nicely as a compact field entry
+            # Format entries in a sleek inline profile block
             field_value = f"🔑 Pass: `{password}`\n🏰 Hypixel: {hypixel} | 🍩 Donut: {donut}"
             bulk_embed.add_field(name=f"📧 {email}", value=field_value, inline=False)
 
-        # Send everything grouped into one single delivery message
         try:
             await channel.send(embed=bulk_embed)
-            await interaction.followup.send("✅ Bulk report sent successfully!", ephemeral=True)
+            await interaction.followup.send("✅ Bulk report sent to the designated channel successfully!", ephemeral=True)
         except discord.Forbidden:
-            await interaction.followup.send(f"⚠️ Missing channel permissions in {channel.mention}.", ephemeral=True)
+            await interaction.followup.send(f"⚠️ Bot lacks permissions to send messages into {channel.mention}.", ephemeral=True)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(AccountChecker(bot))
