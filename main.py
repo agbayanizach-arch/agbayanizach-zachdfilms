@@ -8,7 +8,8 @@ from discord.ext import commands
 from discord import app_commands
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-PREFIX = "\$" 
+# Fixed: Using '.' prefix as requested to fix syntax warnings
+PREFIX = "." 
 VOUCH_CHANNEL_ID = 1555778546046206002
 
 # Target channel configurations
@@ -36,13 +37,13 @@ async def on_ready():
 
 
 # ==========================================
-# 1. COMMAND: \$genaccess <vanity>
+# 1. COMMAND: .genaccess <vanity>
 # ==========================================
 @bot.command(name="genaccess")
 @commands.has_permissions(administrator=True)
 async def genaccess(ctx: commands.Context, vanity: str):
     """
-    Usage: \$genaccess <vanity>
+    Usage: .genaccess <vanity>
     Recreates the exact embed layout rules requested from the reference screenshot.
     """
     global current_vanity
@@ -57,7 +58,7 @@ async def genaccess(ctx: commands.Context, vanity: str):
             f"`{current_vanity} : Free MCFA Generator`\n\n"
             "🔸 **Step 2**\n"
             f"Go to <#{CMD_CHANNEL_ID}> and type:\n"
-            "`$cstatus`\n\n"
+            "`.cstatus`\n\n"
             "✅ **Step 3**\n"
             "You're done! 🎉 You now have access to the **Free Gen.**\n\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -74,12 +75,12 @@ async def genaccess(ctx: commands.Context, vanity: str):
 
 
 # ==========================================
-# 2. COMMAND: \$gen
+# 2. COMMAND: .gen
 # ==========================================
 @bot.command(name="gen")
 async def gen(ctx: commands.Context):
     """
-    Usage: \$gen
+    Usage: .gen
     Pops the first account in the array and securely dispatches it to user DMs inside a green embed.
     """
     if ctx.channel.id != CMD_CHANNEL_ID:
