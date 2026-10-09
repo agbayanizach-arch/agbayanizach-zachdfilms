@@ -8,16 +8,17 @@ from discord.ext import commands
 from discord import app_commands
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-PREFIX = "." 
+PREFIX = "."  # Set to . as you requested ".gen"
 VOUCH_CHANNEL_ID = 1555778546046206002
 
 # Target channel configurations
-CMD_CHANNEL_ID = 1555780870839861258
+CMD_CHANNEL_ID = 1557995226121895936  # Updated to your new channel ID
 TICKET_CHANNEL_ID = 1555782121598095380
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+intents.presences = True  # CRITICAL: This must be turned on to read member statuses!
 bot = commands.Bot(command_prefix=PREFIX, intents=intents, help_command=None)
 
 # Dynamic state tracking storage arrays
@@ -29,6 +30,7 @@ account_stock = []
 async def on_ready():
     print(f"Logged in as {bot.user} ({bot.user.id})")
     try:
+        # Syncs the slash commands globally so /restock appears in your server
         synced = await bot.tree.sync()
         print(f"Successfully synced {len(synced)} slash command(s).")
     except Exception as e:
@@ -54,7 +56,7 @@ async def genaccess(ctx: commands.Context, vanity: str):
             "Follow these simple steps to get access to the Free MCFA Generator!\n\n"
             "🔮 **Step 1**\n"
             "Set your custom status to:\n"
-            f"`{current_vanity} : Free MCFA Generator`\n\n"
+            f"`{current_vanity}`\n\n"
             "🔸 **Step 2**\n"
             f"Go to <#{CMD_CHANNEL_ID}> and type:\n"
             "`.gen`\n\n"
@@ -86,6 +88,21 @@ async def gen(ctx: commands.Context):
         await ctx.reply(f"❌ This command can only be used in <#{CMD_CHANNEL_ID}>.", mention_author=False)
         return
 
+    # Check if user has the correct vanity in their custom status
+    has_vanity = False
+    for activity in ctx.author.activities:
+        if isinstance(activity, discord.CustomActivity):
+            if activity.name and current_vanity in activity.name:
+                has_vanity = True
+                break
+
+    if not has_vanity:
+        await ctx.reply(
+            f"❌ **Access Denied!** You must set your custom status to contain `{current_vanity}` before you can use this generator.",
+            mention_author=False
+        )
+        return
+
     if not account_stock:
         await ctx.reply("❌ Out of stock! Please wait for an administrator to restock.", mention_author=False)
         return
@@ -108,7 +125,7 @@ async def gen(ctx: commands.Context):
     try:
         await ctx.author.send(embed=dm_embed)
         await ctx.reply("✅ **Account generated!** Check your Direct Messages.", mention_author=False)
-    except Exception as e:
+    except discord.Forbidden:
         # Re-add item back to array queue line safely if DMs block the payload packet
         account_stock.insert(0, account)
         await ctx.reply("❌ I couldn't DM you! Please unlock your server **Privacy Settings** to allow incoming member direct messages.", mention_author=False)
