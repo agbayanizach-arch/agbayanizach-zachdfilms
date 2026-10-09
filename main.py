@@ -29,7 +29,6 @@ account_stock = []
 async def on_ready():
     print(f"Logged in as {bot.user} ({bot.user.id})")
     try:
-        # Syncs the slash commands globally so /restock appears in your server
         synced = await bot.tree.sync()
         print(f"Successfully synced {len(synced)} slash command(s).")
     except Exception as e:
@@ -126,7 +125,6 @@ async def restock_slash(interaction: discord.Interaction, file: discord.Attachme
     Slash Command Usage: /restock [file]
     Requires Administrator permission.
     """
-    # Defer response since downloading files over the web takes a quick second
     await interaction.response.defer(ephemeral=True)
 
     if not file.filename.endswith(".txt"):
