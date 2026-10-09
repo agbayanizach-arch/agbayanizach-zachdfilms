@@ -8,7 +8,6 @@ from discord.ext import commands
 from discord import app_commands
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-# Fixed: Using '.' prefix as requested to fix syntax warnings
 PREFIX = "." 
 VOUCH_CHANNEL_ID = 1555778546046206002
 
@@ -58,7 +57,7 @@ async def genaccess(ctx: commands.Context, vanity: str):
             f"`{current_vanity} : Free MCFA Generator`\n\n"
             "🔸 **Step 2**\n"
             f"Go to <#{CMD_CHANNEL_ID}> and type:\n"
-            "`.cstatus`\n\n"
+            "`.gen`\n\n"
             "✅ **Step 3**\n"
             "You're done! 🎉 You now have access to the **Free Gen.**\n\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
